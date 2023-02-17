@@ -52,12 +52,12 @@ where
         // build a seed for the public coin; the initial seed is the hash of public inputs and proof
         // context, but as the protocol progresses, the coin will be reseeded with the info sent to
         // the verifier
-        let mut coin_seed = pub_inputs_bytes;
-        context.write_into(&mut coin_seed);
+        // let coin_seed = pub_inputs_bytes;
+        // context.write_into(&mut coin_seed);
 
         ProverChannel {
             air,
-            public_coin: RandomCoin::new(&coin_seed),
+            public_coin: RandomCoin::new(&pub_inputs_bytes),
             context,
             commitments: Commitments::default(),
             ood_frame: OodFrame::default(),

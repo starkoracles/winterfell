@@ -3,12 +3,18 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-use core::{fmt::Debug, slice};
+use core::{
+    fmt::{Debug, LowerHex},
+    slice,
+};
 use math::{FieldElement, StarkField};
 use utils::{ByteReader, Deserializable, DeserializationError, Serializable};
 
 mod blake;
 pub use blake::{Blake3_192, Blake3_256};
+
+mod blake2s;
+pub use blake2s::Blake2s_256;
 
 mod sha;
 pub use sha::Sha3_256;
@@ -59,7 +65,17 @@ pub trait ElementHasher: Hasher {
 
 /// Defines output type for a cryptographic hash function.
 pub trait Digest:
-    Debug + Default + Copy + Clone + Eq + PartialEq + Send + Sync + Serializable + Deserializable
+    Debug
+    + Default
+    + Copy
+    + Clone
+    + Eq
+    + PartialEq
+    + Send
+    + Sync
+    + Serializable
+    + Deserializable
+    + LowerHex
 {
     /// Returns this digest serialized into an array of bytes.
     ///
@@ -74,7 +90,7 @@ pub trait Digest:
 // ================================================================================================
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct ByteDigest<const N: usize>([u8; N]);
+pub struct ByteDigest<const N: usize>(pub [u8; N]);
 
 impl<const N: usize> ByteDigest<N> {
     pub fn new(value: [u8; N]) -> Self {
@@ -94,6 +110,14 @@ impl<const N: usize> ByteDigest<N> {
         let len = digests.len() * N;
         unsafe { slice::from_raw_parts(p as *const u8, len) }
     }
+
+    pub fn to_words(&self) -> Vec<u32> {
+        let mut result = Vec::new();
+        for i in self.0.chunks(4) {
+            result.push(u32::from_le_bytes(i.try_into().unwrap()));
+        }
+        result
+    }
 }
 
 impl<const N: usize> Digest for ByteDigest<N> {
@@ -101,6 +125,15 @@ impl<const N: usize> Digest for ByteDigest<N> {
         let mut result = [0; 32];
         result[..N].copy_from_slice(&self.0);
         result
+    }
+}
+
+impl<const N: usize> LowerHex for ByteDigest<N> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        for word in self.0.chunks(4) {
+            write!(f, "{:08x}", u32::from_le_bytes(word.try_into().unwrap()))?;
+        }
+        Ok(())
     }
 }
 

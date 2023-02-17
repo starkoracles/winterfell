@@ -61,8 +61,8 @@ where
     B: StarkField,
     H: Hasher,
 {
-    seed: H::Digest,
-    counter: u64,
+    pub seed: H::Digest,
+    pub counter: u64,
     _base_field: PhantomData<B>,
 }
 

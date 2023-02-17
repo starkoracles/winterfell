@@ -22,7 +22,7 @@ use utils::{
 /// Internally, the commitments are stored as a sequence of bytes. Thus, to retrieve the
 /// commitments, [parse()](Commitments::parse) function should be used.
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
-pub struct Commitments(Vec<u8>);
+pub struct Commitments(pub Vec<u8>);
 
 impl Commitments {
     // CONSTRUCTOR

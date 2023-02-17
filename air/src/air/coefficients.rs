@@ -17,7 +17,7 @@ use utils::collections::Vec;
 /// verifier draws these elements uniformly at random from the extension field of the protocol
 /// after the prover commits to a previous trace segment.
 #[derive(Debug, Clone)]
-pub struct AuxTraceRandElements<E: FieldElement>(Vec<Vec<E>>);
+pub struct AuxTraceRandElements<E: FieldElement>(pub Vec<Vec<E>>);
 
 impl<E: FieldElement> AuxTraceRandElements<E> {
     /// Instantiates and returns an empty set of random elements.

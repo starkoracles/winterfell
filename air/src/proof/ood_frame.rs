@@ -4,7 +4,7 @@
 // LICENSE file in the root directory of this source tree.
 
 use crate::EvaluationFrame;
-use math::FieldElement;
+use math::{FieldElement, StarkField};
 use utils::{
     collections::Vec, ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable,
     SliceReader,

@@ -3,18 +3,20 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+use core::fmt::Display;
+
 use air::{proof::Table, Air, DeepCompositionCoefficients, EvaluationFrame, FieldExtension};
-use math::FieldElement;
-use utils::collections::Vec;
+use math::{fields::f64::BaseElement, FieldElement, StarkField};
+use utils::{collections::Vec, Deserializable};
 
 // DEEP COMPOSER
 // ================================================================================================
 
 pub struct DeepComposer<E: FieldElement> {
-    field_extension: FieldExtension,
-    cc: DeepCompositionCoefficients<E>,
-    x_coordinates: Vec<E>,
-    z: [E; 2],
+    pub field_extension: FieldExtension,
+    pub cc: DeepCompositionCoefficients<E>,
+    pub x_coordinates: Vec<E>,
+    pub z: [E; 2],
 }
 
 impl<E: FieldElement> DeepComposer<E> {
@@ -72,6 +74,13 @@ impl<E: FieldElement> DeepComposer<E> {
         // trace columns are in the extension field.
         let conjugate_values =
             get_conjugate_values(self.field_extension, ood_main_trace_states[0], self.z[0]);
+
+        println!(
+            "queried_main_trace_states: {:?}, {:?}, {:?}",
+            queried_main_trace_states.num_rows(),
+            queried_aux_trace_states.clone().unwrap().num_rows(),
+            queried_main_trace_states.num_columns()
+        );
 
         // compose columns of of the main trace segment
         let mut result = E::zeroed_vector(queried_main_trace_states.num_rows());

@@ -22,11 +22,12 @@
 #[macro_use]
 extern crate alloc;
 
-mod hash;
-pub use hash::{Digest, ElementHasher, Hasher};
+pub mod hash;
+pub use hash::{ByteDigest, Digest, ElementHasher, Hasher};
 pub mod hashers {
     //! Contains implementations of currently supported hash functions.
 
+    pub use super::hash::Blake2s_256;
     pub use super::hash::Blake3_192;
     pub use super::hash::Blake3_256;
     pub use super::hash::Rp62_248;

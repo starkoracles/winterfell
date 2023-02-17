@@ -63,6 +63,11 @@ impl<E: FieldElement> Table<E> {
     // PUBLIC ACCESSORS
     // --------------------------------------------------------------------------------------------
 
+    /// Returns raw data in this table.
+    pub fn data(&self) -> &[E] {
+        &self.data[..]
+    }
+
     /// Returns number of rows in this table.
     pub fn num_rows(&self) -> usize {
         self.data.len() / self.row_width

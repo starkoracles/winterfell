@@ -265,7 +265,7 @@ impl<H: Hasher> BatchMerkleProof<H> {
     /// * No indexes were provided (i.e., `indexes` is an empty slice).
     /// * Number of provided indexes is greater than 255.
     /// * Number of provided indexes does not match the number of leaf nodes in the proof.
-    pub fn into_paths(self, indexes: &[usize]) -> Result<Vec<Vec<H::Digest>>, MerkleTreeError> {
+    pub fn into_paths(&self, indexes: &[usize]) -> Result<Vec<Vec<H::Digest>>, MerkleTreeError> {
         if indexes.is_empty() {
             return Err(MerkleTreeError::TooFewLeafIndexes);
         }

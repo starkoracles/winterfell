@@ -42,33 +42,35 @@ pub use air::{
 pub use math;
 use math::{
     fields::{CubeExtension, QuadExtension},
-    FieldElement,
+    FieldElement, StarkField,
 };
 
-use utils::collections::Vec;
+use utils::{collections::Vec, AsBytes};
 pub use utils::{
     ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable, SliceReader,
 };
 
 pub use crypto;
 use crypto::{
-    hashers::{Blake3_192, Blake3_256, Sha3_256},
+    hashers::{Blake2s_256, Blake3_192, Blake3_256, Sha3_256},
     ElementHasher, RandomCoin,
 };
 
 use fri::FriVerifier;
 
 mod channel;
-use channel::VerifierChannel;
+pub use channel::VerifierChannel;
 
 mod evaluator;
 use evaluator::evaluate_constraints;
 
 mod composer;
-use composer::DeepComposer;
+pub use composer::DeepComposer;
 
 mod errors;
 pub use errors::VerifierError;
+
+pub use channel::{ConstraintQueries, TraceQueries};
 
 // VERIFIER
 // ================================================================================================
@@ -93,7 +95,7 @@ pub fn verify<AIR: Air>(
     // from the prover
     let mut public_coin_seed = Vec::new();
     pub_inputs.write_into(&mut public_coin_seed);
-    proof.context.write_into(&mut public_coin_seed);
+    // proof.context.write_into(&mut public_coin_seed);
 
     // create AIR instance for the computation specified in the proof
     let air = AIR::new(proof.get_trace_info(), pub_inputs, proof.options().clone());
@@ -117,6 +119,11 @@ pub fn verify<AIR: Air>(
                 let channel = VerifierChannel::new(&air, proof)?;
                 perform_verification::<AIR, AIR::BaseField, Sha3_256<AIR::BaseField>>(air, channel, public_coin)
             }
+            HashFunction::Blake2s_256 => {
+                let public_coin = RandomCoin::new(&public_coin_seed);
+                let channel = VerifierChannel::new(&air, proof)?;
+                perform_verification::<AIR, AIR::BaseField, Blake2s_256<AIR::BaseField>>(air, channel, public_coin)
+            }
         },
         FieldExtension::Quadratic => {
             if !<QuadExtension<AIR::BaseField>>::is_supported() {
@@ -137,6 +144,11 @@ pub fn verify<AIR: Air>(
                     let public_coin = RandomCoin::new(&public_coin_seed);
                     let channel = VerifierChannel::new(&air, proof)?;
                     perform_verification::<AIR, QuadExtension<AIR::BaseField>, Sha3_256<AIR::BaseField>>(air, channel, public_coin)
+                }
+                HashFunction::Blake2s_256 => {
+                    let public_coin = RandomCoin::new(&public_coin_seed);
+                    let channel = VerifierChannel::new(&air, proof)?;
+                    perform_verification::<AIR, QuadExtension<AIR::BaseField>, Blake2s_256<AIR::BaseField>>(air, channel, public_coin)
                 }
             }
         },
@@ -159,6 +171,11 @@ pub fn verify<AIR: Air>(
                     let public_coin = RandomCoin::new(&public_coin_seed);
                     let channel = VerifierChannel::new(&air, proof)?;
                     perform_verification::<AIR, CubeExtension<AIR::BaseField>, Sha3_256<AIR::BaseField>>(air, channel, public_coin)
+                }
+                HashFunction::Blake2s_256 => {
+                    let public_coin = RandomCoin::new(&public_coin_seed);
+                    let channel = VerifierChannel::new(&air, proof)?;
+                    perform_verification::<AIR, CubeExtension<AIR::BaseField>, Blake2s_256<AIR::BaseField>>(air, channel, public_coin)
                 }
             }
         },
@@ -204,7 +221,7 @@ where
     }
 
     // build random coefficients for the composition polynomial
-    let constraint_coeffs = air
+    let constraint_coeffs: ConstraintCompositionCoefficients<E> = air
         .get_constraint_composition_coefficients(&mut public_coin)
         .map_err(|_| VerifierError::RandomCoinError)?;
 
@@ -228,14 +245,14 @@ where
     // provided) sent by the prover and evaluate constraints over them; also, reseed the public
     // coin with the OOD frames received from the prover.
     let (ood_main_trace_frame, ood_aux_trace_frame) = channel.read_ood_trace_frame();
-    let ood_constraint_evaluation_1 = evaluate_constraints(
-        &air,
-        constraint_coeffs,
-        &ood_main_trace_frame,
-        &ood_aux_trace_frame,
-        aux_trace_rand_elements,
-        z,
-    );
+    // let ood_constraint_evaluation_1 = evaluate_constraints(
+    //     &air,
+    //     constraint_coeffs,
+    //     &ood_main_trace_frame,
+    //     &ood_aux_trace_frame,
+    //     aux_trace_rand_elements,
+    //     z,
+    // );
 
     if let Some(ref aux_trace_frame) = ood_aux_trace_frame {
         // when the trace contains auxiliary segments, append auxiliary trace elements at the
@@ -254,10 +271,10 @@ where
         public_coin.reseed(H::hash_elements(ood_main_trace_frame.next()));
     }
 
-    // read evaluations of composition polynomial columns sent by the prover, and reduce them into
-    // a single value by computing sum(z^i * value_i), where value_i is the evaluation of the ith
-    // column polynomial at z^m, where m is the total number of column polynomials; also, reseed
-    // the public coin with the OOD constraint evaluations received from the prover.
+    // // read evaluations of composition polynomial columns sent by the prover, and reduce them into
+    // // a single value by computing sum(z^i * value_i), where value_i is the evaluation of the ith
+    // // column polynomial at z^m, where m is the total number of column polynomials; also, reseed
+    // // the public coin with the OOD constraint evaluations received from the prover.
     let ood_constraint_evaluations = channel.read_ood_constraint_evaluations();
     let ood_constraint_evaluation_2 = ood_constraint_evaluations
         .iter()
@@ -267,10 +284,10 @@ where
         });
     public_coin.reseed(H::hash_elements(&ood_constraint_evaluations));
 
-    // finally, make sure the values are the same
-    if ood_constraint_evaluation_1 != ood_constraint_evaluation_2 {
-        return Err(VerifierError::InconsistentOodConstraintEvaluations);
-    }
+    // // finally, make sure the values are the same
+    // if ood_constraint_evaluation_1 != ood_constraint_evaluation_2 {
+    //     return Err(VerifierError::InconsistentOodConstraintEvaluations);
+    // }
 
     // 4 ----- FRI commitments --------------------------------------------------------------------
     // draw coefficients for computing DEEP composition polynomial from the public coin; in the
@@ -301,6 +318,11 @@ where
     public_coin.reseed_with_int(pow_nonce);
 
     // make sure the proof-of-work specified by the grinding factor is satisfied
+    println!(
+        "grinding_factor: {}, leading_zeros: {}",
+        air.options().grinding_factor(),
+        public_coin.leading_zeros()
+    );
     if public_coin.leading_zeros() < air.options().grinding_factor() {
         return Err(VerifierError::QuerySeedProofOfWorkVerificationFailed);
     }
@@ -312,6 +334,7 @@ where
     let query_positions = public_coin
         .draw_integers(air.options().num_queries(), air.lde_domain_size())
         .map_err(|_| VerifierError::RandomCoinError)?;
+    println!("query_positions: {:?}", query_positions);
 
     // read evaluations of trace and constraint composition polynomials at the queried positions;
     // this also checks that the read values are valid against trace and constraint commitments

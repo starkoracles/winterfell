@@ -556,6 +556,12 @@ pub fn flatten_vector_elements<T, const N: usize>(source: Vec<[T; N]>) -> Vec<T>
 /// ```
 pub fn transpose_slice<T: Copy + Send + Sync, const N: usize>(source: &[T]) -> Vec<[T; N]> {
     let row_count = source.len() / N;
+    println!(
+        "row_count: {}, N: {}, source_len: {}",
+        row_count,
+        N,
+        source.len()
+    );
     assert_eq!(
         row_count * N,
         source.len(),

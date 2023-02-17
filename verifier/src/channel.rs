@@ -24,10 +24,10 @@ use utils::{collections::Vec, string::ToString};
 pub struct VerifierChannel<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> {
     // trace queries
     trace_roots: Vec<H::Digest>,
-    trace_queries: Option<TraceQueries<E, H>>,
+    pub trace_queries: Option<TraceQueries<E, H>>,
     // constraint queries
     constraint_root: H::Digest,
-    constraint_queries: Option<ConstraintQueries<E, H>>,
+    pub constraint_queries: Option<ConstraintQueries<E, H>>,
     // FRI proof
     fri_roots: Option<Vec<H::Digest>>,
     fri_layer_proofs: Vec<BatchMerkleProof<H>>,
@@ -235,10 +235,10 @@ where
 /// * Merkle authentication paths for all queries.
 ///
 /// Trace states for all auxiliary segments are stored in a single table.
-struct TraceQueries<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> {
-    query_proofs: Vec<BatchMerkleProof<H>>,
-    main_states: Table<E::BaseField>,
-    aux_states: Option<Table<E>>,
+pub struct TraceQueries<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> {
+    pub query_proofs: Vec<BatchMerkleProof<H>>,
+    pub main_states: Table<E::BaseField>,
+    pub aux_states: Option<Table<E>>,
 }
 
 impl<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> TraceQueries<E, H> {
@@ -314,9 +314,9 @@ impl<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> TraceQueries<E
 /// Container of constraint evaluation query data, including:
 /// * Queried constraint evaluation values.
 /// * Merkle authentication paths for all queries.
-struct ConstraintQueries<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> {
-    query_proofs: BatchMerkleProof<H>,
-    evaluations: Table<E>,
+pub struct ConstraintQueries<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> {
+    pub query_proofs: BatchMerkleProof<H>,
+    pub evaluations: Table<E>,
 }
 
 impl<E: FieldElement, H: ElementHasher<BaseField = E::BaseField>> ConstraintQueries<E, H> {

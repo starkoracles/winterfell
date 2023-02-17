@@ -4,7 +4,7 @@
 // LICENSE file in the root directory of this source tree.
 
 use super::{Digest, DIGEST_SIZE};
-use core::slice;
+use core::{fmt::LowerHex, slice};
 use math::{fields::f62::BaseElement, StarkField};
 use utils::{ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable};
 
@@ -44,6 +44,15 @@ impl Digest for ElementDigest {
         result[24..].copy_from_slice(&(v4 >> 6).to_le_bytes());
 
         result
+    }
+}
+
+impl LowerHex for ElementDigest {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        for element in self.0.iter() {
+            write!(f, "{:016x}", element.as_int())?;
+        }
+        Ok(())
     }
 }
 
