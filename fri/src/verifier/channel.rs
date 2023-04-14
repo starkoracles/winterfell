@@ -105,32 +105,32 @@ pub trait VerifierChannel<E: FieldElement> {
         commitment: &<<Self as VerifierChannel<E>>::Hasher as Hasher>::Digest,
     ) -> Result<Vec<E>, VerifierError> {
         let remainder = self.take_fri_remainder();
-        for v in remainder.chunks(8) {
-            println!(
-                "remainder: {:?}",
-                v.iter()
-                    .map(|e| e.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            );
-        }
+        // for v in remainder.chunks(8) {
+        //     println!(
+        //         "remainder: {:?}",
+        //         v.iter()
+        //             .map(|e| e.to_string())
+        //             .collect::<Vec<_>>()
+        //             .join(", ")
+        //     );
+        // }
 
         // build remainder Merkle tree
         let remainder_values = transpose_slice(&remainder);
         let hashed_values = hash_values::<Self::Hasher, E, N>(&remainder_values);
 
-        println!("commitment: {:2x}", commitment);
+        // println!("commitment: {:2x}", commitment);
 
-        for (d, v) in hashed_values.iter().zip(remainder_values.iter()) {
-            println!("hashed value: {:2x}", d);
-            println!(
-                "remainder value: {:?}",
-                v.iter()
-                    .map(|e| e.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            );
-        }
+        // for (d, v) in hashed_values.iter().zip(remainder_values.iter()) {
+        //     println!("hashed value: {:2x}", d);
+        //     println!(
+        //         "remainder value: {:?}",
+        //         v.iter()
+        //             .map(|e| e.to_string())
+        //             .collect::<Vec<_>>()
+        //             .join(", ")
+        //     );
+        // }
 
         let remainder_tree = MerkleTree::<Self::Hasher>::new(hashed_values)
             .map_err(|err| VerifierError::RemainderTreeConstructionFailed(format!("{}", err)))?;

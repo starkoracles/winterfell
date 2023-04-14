@@ -75,6 +75,7 @@ impl<E: FieldElement> DeepComposer<E> {
         let conjugate_values =
             get_conjugate_values(self.field_extension, ood_main_trace_states[0], self.z[0]);
 
+        #[cfg(feature = "std")]
         println!(
             "queried_main_trace_states: {:?}, {:?}, {:?}",
             queried_main_trace_states.num_rows(),

@@ -318,6 +318,7 @@ where
     public_coin.reseed_with_int(pow_nonce);
 
     // make sure the proof-of-work specified by the grinding factor is satisfied
+    #[cfg(feature = "std")]
     println!(
         "grinding_factor: {}, leading_zeros: {}",
         air.options().grinding_factor(),
@@ -334,6 +335,8 @@ where
     let query_positions = public_coin
         .draw_integers(air.options().num_queries(), air.lde_domain_size())
         .map_err(|_| VerifierError::RandomCoinError)?;
+
+    #[cfg(feature = "std")]
     println!("query_positions: {:?}", query_positions);
 
     // read evaluations of trace and constraint composition polynomials at the queried positions;
