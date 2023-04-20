@@ -28,6 +28,7 @@ required-features = ["concurrent"]
 default = ["std"]
 concurrent = ["utils/concurrent", "std"]
 std = ["blake3/std", "math/std", "sha3/std", "utils/std"]
+wasm = ["wasm-bindgen", "hex", "math/wasm"]
 
 [dependencies]
 blake3 = { version = "1.0", default-features = false }
@@ -35,8 +36,11 @@ blake2 = { package = "blake2-rfc", version = "0.2"}
 math = { version = "0.4.2", path = "../math", package = "winter-math", default-features = false }
 sha3 = { version = "0.10", default-features = false }
 utils = { version = "0.4.2", path = "../utils/core", package = "winter-utils", default-features = false }
+wasm-bindgen = { version = "0.2", optional = true }
+hex = { version = "0.4", optional = true }
 
 [dev-dependencies]
 criterion = "0.4"
 proptest = "1.0"
 rand-utils = { version = "0.4.2", path = "../utils/rand", package = "winter-rand-utils" }
+wasm-bindgen-test = { version = "0.3"}
