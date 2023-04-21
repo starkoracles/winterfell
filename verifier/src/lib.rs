@@ -245,14 +245,14 @@ where
     // provided) sent by the prover and evaluate constraints over them; also, reseed the public
     // coin with the OOD frames received from the prover.
     let (ood_main_trace_frame, ood_aux_trace_frame) = channel.read_ood_trace_frame();
-    // let ood_constraint_evaluation_1 = evaluate_constraints(
-    //     &air,
-    //     constraint_coeffs,
-    //     &ood_main_trace_frame,
-    //     &ood_aux_trace_frame,
-    //     aux_trace_rand_elements,
-    //     z,
-    // );
+    let ood_constraint_evaluation_1 = evaluate_constraints(
+        &air,
+        constraint_coeffs,
+        &ood_main_trace_frame,
+        &ood_aux_trace_frame,
+        aux_trace_rand_elements,
+        z,
+    );
 
     if let Some(ref aux_trace_frame) = ood_aux_trace_frame {
         // when the trace contains auxiliary segments, append auxiliary trace elements at the
@@ -284,10 +284,10 @@ where
         });
     public_coin.reseed(H::hash_elements(&ood_constraint_evaluations));
 
-    // // finally, make sure the values are the same
-    // if ood_constraint_evaluation_1 != ood_constraint_evaluation_2 {
-    //     return Err(VerifierError::InconsistentOodConstraintEvaluations);
-    // }
+    // finally, make sure the values are the same
+    if ood_constraint_evaluation_1 != ood_constraint_evaluation_2 {
+        return Err(VerifierError::InconsistentOodConstraintEvaluations);
+    }
 
     // 4 ----- FRI commitments --------------------------------------------------------------------
     // draw coefficients for computing DEEP composition polynomial from the public coin; in the
@@ -318,12 +318,6 @@ where
     public_coin.reseed_with_int(pow_nonce);
 
     // make sure the proof-of-work specified by the grinding factor is satisfied
-    #[cfg(feature = "std")]
-    println!(
-        "grinding_factor: {}, leading_zeros: {}",
-        air.options().grinding_factor(),
-        public_coin.leading_zeros()
-    );
     if public_coin.leading_zeros() < air.options().grinding_factor() {
         return Err(VerifierError::QuerySeedProofOfWorkVerificationFailed);
     }
