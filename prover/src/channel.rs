@@ -19,13 +19,13 @@ use utils::iterators::*;
 // TYPES AND INTERFACES
 // ================================================================================================
 
-pub struct ProverChannel<'a, A, E, H>
+pub struct ProverChannel<A, E, H>
 where
     A: Air,
     E: FieldElement<BaseField = A::BaseField>,
     H: ElementHasher<BaseField = A::BaseField>,
 {
-    air: &'a A,
+    air: A,
     public_coin: RandomCoin<A::BaseField, H>,
     context: Context,
     commitments: Commitments,
@@ -37,7 +37,7 @@ where
 // PROVER CHANNEL IMPLEMENTATION
 // ================================================================================================
 
-impl<'a, A, E, H> ProverChannel<'a, A, E, H>
+impl<A, E, H> ProverChannel<A, E, H>
 where
     A: Air,
     E: FieldElement<BaseField = A::BaseField>,
@@ -46,7 +46,7 @@ where
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     /// Creates a new prover channel for the specified `air` and public inputs.
-    pub fn new(air: &'a A, pub_inputs_bytes: Vec<u8>) -> Self {
+    pub fn new(air: A, pub_inputs_bytes: Vec<u8>) -> Self {
         let context = Context::new::<A::BaseField>(air.trace_info(), air.options().clone());
 
         // build a seed for the public coin; the initial seed is the hash of public inputs and proof
@@ -191,7 +191,7 @@ where
 // FRI PROVER CHANNEL IMPLEMENTATION
 // ================================================================================================
 
-impl<'a, A, E, H> fri::ProverChannel<E> for ProverChannel<'a, A, E, H>
+impl<'a, A, E, H> fri::ProverChannel<E> for ProverChannel<A, E, H>
 where
     A: Air,
     E: FieldElement<BaseField = A::BaseField>,

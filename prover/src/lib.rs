@@ -94,7 +94,7 @@ pub use trace::{Trace, TraceTable, TraceTableFragment};
 use trace::{TraceCommitment, TraceLde, TracePolyTable};
 
 mod channel;
-use channel::ProverChannel;
+pub use channel::ProverChannel;
 
 mod errors;
 pub use errors::ProverError;
@@ -219,7 +219,7 @@ pub trait Prover {
         // create a channel which is used to simulate interaction between the prover and the
         // verifier; the channel will be used to commit to values and to draw randomness that
         // should come from the verifier.
-        let mut channel = ProverChannel::<Self::Air, E, H>::new(&air, pub_inputs_bytes);
+        let mut channel = ProverChannel::<Self::Air, E, H>::new(air.clone(), pub_inputs_bytes);
 
         // 1 ----- Commit to the execution trace --------------------------------------------------
 

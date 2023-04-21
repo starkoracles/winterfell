@@ -177,7 +177,7 @@ const MIN_CYCLE_LENGTH: usize = 2;
 /// * Override [Air::get_aux_assertions()] method. This method is similar to the
 ///   [Air::get_assertions()] method, but it should return assertions against columns of the
 ///   auxiliary trace segments.
-pub trait Air: Send + Sync {
+pub trait Air: Send + Sync + Clone {
     /// Base field for the computation described by this AIR. STARK protocol for this computation
     /// may be executed in the base field, or in an extension of the base fields as specified
     /// by [ProofOptions] struct.
