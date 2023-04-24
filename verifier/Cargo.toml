@@ -25,6 +25,7 @@ crypto = { version = "0.6", path = "../crypto", package = "winter-crypto", defau
 fri = { version = "0.6", path = "../fri", package = "winter-fri", default-features = false }
 math = { version = "0.6", path = "../math", package = "winter-math", default-features = false }
 utils = { version = "0.6", path = "../utils/core", package = "winter-utils", default-features = false }
+log = "0.4"
 
 # Allow math in docs
 [package.metadata.docs.rs]

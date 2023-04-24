@@ -66,6 +66,8 @@ use composer::DeepComposer;
 mod errors;
 pub use errors::VerifierError;
 
+use log::debug;
+
 // VERIFIER
 // ================================================================================================
 /// Verifies that the specified computation was executed correctly against the specified inputs.
@@ -168,6 +170,8 @@ where
     let constraint_coeffs = air
         .get_constraint_composition_coefficients(&mut public_coin)
         .map_err(|_| VerifierError::RandomCoinError)?;
+
+    debug!("constraint_coeffs: {:?}", constraint_coeffs);
 
     // 2 ----- constraint commitment --------------------------------------------------------------
     // read the commitment to evaluations of the constraint composition polynomial over the LDE

@@ -49,7 +49,7 @@ const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
 ///
 /// Internal values represent x * R mod M where R = 2^64 mod M and x in [0, M).
 /// The backing type is `u64` but the internal values are always in the range [0, M).
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Default)]
 pub struct BaseElement(u64);
 impl BaseElement {
     /// Creates a new field element from the provided `value`; the value is converted into
@@ -90,6 +90,12 @@ impl BaseElement {
         let (res, over) = s_lo.overflowing_add(z);
 
         BaseElement::from_mont(res.wrapping_add(0u32.wrapping_sub(over as u32) as u64))
+    }
+}
+
+impl Debug for BaseElement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{:?}", self.0)
     }
 }
 
