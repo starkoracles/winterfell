@@ -95,7 +95,7 @@ impl BaseElement {
 
 impl Debug for BaseElement {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{:?}", self.0)
+        write!(f, "{:?}", self.as_int())
     }
 }
 

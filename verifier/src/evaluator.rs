@@ -40,7 +40,10 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
     let mut t_evaluations1 = E::zeroed_vector(t_constraints.num_main_constraints());
     air.evaluate_transition(main_trace_frame, &periodic_values, &mut t_evaluations1);
 
-    debug!("t_evaluations1: {:?}", t_evaluations1);
+    debug!(
+        "main_trace_frame: {:?}, t_evaluations1: {:?}, periodic_values: {:?}",
+        main_trace_frame, &t_evaluations1, &periodic_values
+    );
 
     // evaluate transition constraints for auxiliary trace segments (if any)
     let mut t_evaluations2 = E::zeroed_vector(t_constraints.num_aux_constraints());
