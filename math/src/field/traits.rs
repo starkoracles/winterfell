@@ -194,8 +194,8 @@ pub trait FieldElement:
     fn into_js_value(self) -> wasm_bindgen::JsValue {
         let mut buf = vec![];
         self.write_into(&mut buf);
-        let h = hex::encode(buf);
-        wasm_bindgen::JsValue::from_str(&h)
+        let js_buffer = js_sys::Uint8Array::from(&buf[..]).buffer();
+        wasm_bindgen::JsValue::from(&js_buffer)
     }
 
     #[cfg(feature = "wasm")]
@@ -204,9 +204,10 @@ pub trait FieldElement:
         Self: Sized,
     {
         use utils::SliceReader;
+        use wasm_bindgen::JsCast;
 
-        let h = value.as_string().unwrap();
-        let bytes = hex::decode(h).unwrap();
+        let js_buffer = value.unchecked_into::<js_sys::ArrayBuffer>();
+        let bytes = js_sys::Uint8Array::new(&js_buffer).to_vec();
         let mut reader = SliceReader::new(&bytes);
         Self::read_from(&mut reader).unwrap()
     }
