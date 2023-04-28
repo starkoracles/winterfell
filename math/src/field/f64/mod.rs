@@ -51,7 +51,7 @@ const ELEMENT_BYTES: usize = core::mem::size_of::<u64>();
 /// Represents base field element in the field.
 ///
 /// Internal values are stored in the range [0, 2^64). The backing type is `u64`.
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Default)]
 pub struct BaseElement(u64);
 impl BaseElement {
     /// Creates a new field element from the provided `value`; the value is converted into
@@ -195,6 +195,12 @@ impl FieldElement for BaseElement {
 
     fn as_base_elements(elements: &[Self]) -> &[Self::BaseField] {
         elements
+    }
+}
+
+impl Debug for BaseElement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.as_int())
     }
 }
 
