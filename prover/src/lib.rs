@@ -67,11 +67,11 @@ use math::{
 pub use crypto;
 use crypto::{
     hashers::{Blake2s_256, Blake3_192, Blake3_256, Sha3_256},
-    ElementHasher, MerkleTree,
+    Digest, ElementHasher, MerkleTree,
 };
 
-#[cfg(feature = "std")]
-use log::debug;
+#[cfg(any(feature = "std", feature = "wasm"))]
+use log::{debug, info};
 #[cfg(feature = "std")]
 use math::log2;
 #[cfg(feature = "std")]
@@ -497,6 +497,12 @@ pub trait Prover {
         #[cfg(feature = "std")]
         let now = Instant::now();
         let trace_tree = trace_lde.commit_to_rows();
+        #[cfg(feature = "wasm")]
+        {
+            let r: &H::Digest = trace_tree.root();
+            let h = hex::encode(r.to_bytes());
+            info!("trace tree is {}", h);
+        }
         #[cfg(feature = "std")]
         debug!(
             "Computed execution trace commitment (Merkle tree of depth {}) in {} ms",
