@@ -219,7 +219,7 @@ pub trait Prover {
         // create a channel which is used to simulate interaction between the prover and the
         // verifier; the channel will be used to commit to values and to draw randomness that
         // should come from the verifier.
-        let mut channel = ProverChannel::<Self::Air, E, H>::new(air.clone(), pub_inputs_bytes);
+        let channel = ProverChannel::<Self::Air, E, H>::new(air.clone(), pub_inputs_bytes);
 
         // 1 ----- Commit to the execution trace --------------------------------------------------
 
@@ -238,6 +238,30 @@ pub trait Prover {
         let (main_trace_lde, main_trace_tree, main_trace_polys) =
             self.build_trace_commitment::<Self::BaseField, H>(trace.main_segment(), &domain);
 
+        self.prove_after_build_trace_commitment::<E, H>(
+            air,
+            channel,
+            main_trace_tree,
+            main_trace_lde,
+            main_trace_polys,
+            trace,
+        )
+    }
+
+    fn prove_after_build_trace_commitment<E, H>(
+        &self,
+        air: Self::Air,
+        mut channel: ProverChannel<Self::Air, E, H>,
+        main_trace_tree: MerkleTree<H>,
+        main_trace_lde: Matrix<Self::BaseField>,
+        main_trace_polys: Matrix<Self::BaseField>,
+        mut trace: Self::Trace,
+    ) -> Result<StarkProof, ProverError>
+    where
+        E: FieldElement<BaseField = Self::BaseField>,
+        H: ElementHasher<BaseField = Self::BaseField>,
+    {
+        let domain = StarkDomain::new(&air);
         // commit to the LDE of the main trace by writing the root of its Merkle tree into
         // the channel
         channel.commit_trace(*main_trace_tree.root());
