@@ -143,7 +143,6 @@ where
             info!(
                 "b_column: {:?}, trace_value: {:?}, x: {:?}, evaluation: {:?}",
                 constraint.column(),
-                &constraint,
                 &trace_value,
                 &x,
                 &evaluation,
