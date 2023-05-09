@@ -189,28 +189,6 @@ pub trait FieldElement:
     /// output list will contain decompositions of each extension element into underlying base
     /// elements.
     fn as_base_elements(elements: &[Self]) -> &[Self::BaseField];
-
-    #[cfg(feature = "wasm")]
-    fn into_js_value(self) -> wasm_bindgen::JsValue {
-        let mut buf = vec![];
-        self.write_into(&mut buf);
-        let js_buffer = js_sys::Uint8Array::from(&buf[..]).buffer();
-        wasm_bindgen::JsValue::from(&js_buffer)
-    }
-
-    #[cfg(feature = "wasm")]
-    fn from_js_value(value: wasm_bindgen::JsValue) -> Self
-    where
-        Self: Sized,
-    {
-        use utils::SliceReader;
-        use wasm_bindgen::JsCast;
-
-        let js_buffer = value.unchecked_into::<js_sys::ArrayBuffer>();
-        let bytes = js_sys::Uint8Array::new(&js_buffer).to_vec();
-        let mut reader = SliceReader::new(&bytes);
-        Self::read_from(&mut reader).unwrap()
-    }
 }
 
 // STARK FIELD

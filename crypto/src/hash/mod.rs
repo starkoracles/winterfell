@@ -84,24 +84,6 @@ pub trait Digest:
     /// upper limit on the possible digest size. For digests which are smaller than 32 bytes, the
     /// unused bytes should be set to 0.
     fn as_bytes(&self) -> [u8; 32];
-
-    #[cfg(feature = "wasm")]
-    fn into_js_value(self) -> wasm_bindgen::JsValue {
-        let bytes = self.as_bytes();
-        let h = hex::encode(bytes);
-        wasm_bindgen::JsValue::from_str(&h)
-    }
-
-    #[cfg(feature = "wasm")]
-    fn from_js_value(value: wasm_bindgen::JsValue) -> Self
-    where
-        Self: Sized,
-    {
-        let h = value.as_string().unwrap();
-        let bytes = hex::decode(h).unwrap();
-        let mut reader = SliceReader::new(&bytes);
-        Self::read_from(&mut reader).unwrap()
-    }
 }
 
 // BYTE DIGEST

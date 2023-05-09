@@ -84,14 +84,16 @@ mod matrix;
 pub use matrix::Matrix;
 
 mod constraints;
-use constraints::{CompositionPoly, ConstraintCommitment, ConstraintEvaluator};
+use constraints::{
+    CompositionPoly, ConstraintCommitment, ConstraintEvaluationTable, ConstraintEvaluator,
+};
 
 mod composer;
 use composer::DeepCompositionPoly;
 
 mod trace;
-pub use trace::{Trace, TraceTable, TraceTableFragment};
-use trace::{TraceCommitment, TraceLde, TracePolyTable};
+pub use trace::{Trace, TraceLde, TraceTable, TraceTableFragment};
+use trace::{TraceCommitment, TracePolyTable};
 
 mod channel;
 pub use channel::ProverChannel;
@@ -219,7 +221,7 @@ pub trait Prover {
         // create a channel which is used to simulate interaction between the prover and the
         // verifier; the channel will be used to commit to values and to draw randomness that
         // should come from the verifier.
-        let channel = ProverChannel::<Self::Air, E, H>::new(air.clone(), pub_inputs_bytes);
+        let mut channel = ProverChannel::<Self::Air, E, H>::new(air.clone(), pub_inputs_bytes);
 
         // 1 ----- Commit to the execution trace --------------------------------------------------
 
@@ -238,30 +240,54 @@ pub trait Prover {
         let (main_trace_lde, main_trace_tree, main_trace_polys) =
             self.build_trace_commitment::<Self::BaseField, H>(trace.main_segment(), &domain);
 
-        self.prove_after_build_trace_commitment::<E, H>(
-            air,
+        let (trace_polys, trace_commitment, aux_trace_rand_elements) = self
+            .commit_to_trace_and_validate(
+                &air,
+                &mut channel,
+                main_trace_tree,
+                main_trace_lde,
+                main_trace_polys,
+                &mut trace,
+            )?;
+
+        let constraint_evaluations = self.evaluate_constraints(
+            &air,
+            &domain,
+            &mut channel,
+            trace_commitment.trace_table(),
+            aux_trace_rand_elements,
+        )?;
+
+        self.prove_after_constraint_eval::<E, H>(
+            &air,
             channel,
-            main_trace_tree,
-            main_trace_lde,
-            main_trace_polys,
-            trace,
+            constraint_evaluations,
+            trace_polys,
+            trace_commitment,
         )
     }
 
-    fn prove_after_build_trace_commitment<E, H>(
+    fn commit_to_trace_and_validate<E, H>(
         &self,
-        air: Self::Air,
-        mut channel: ProverChannel<Self::Air, E, H>,
+        air: &Self::Air,
+        channel: &mut ProverChannel<Self::Air, E, H>,
         main_trace_tree: MerkleTree<H>,
         main_trace_lde: Matrix<Self::BaseField>,
         main_trace_polys: Matrix<Self::BaseField>,
-        mut trace: Self::Trace,
-    ) -> Result<StarkProof, ProverError>
+        trace: &mut Self::Trace,
+    ) -> Result<
+        (
+            TracePolyTable<E>,
+            TraceCommitment<E, H>,
+            AuxTraceRandElements<E>,
+        ),
+        ProverError,
+    >
     where
         E: FieldElement<BaseField = Self::BaseField>,
         H: ElementHasher<BaseField = Self::BaseField>,
     {
-        let domain = StarkDomain::new(&air);
+        let domain = StarkDomain::new(air);
         // commit to the LDE of the main trace by writing the root of its Merkle tree into
         // the channel
         channel.commit_trace(*main_trace_tree.root());
@@ -318,8 +344,22 @@ pub trait Prover {
         // This checks validity of both, assertions and state transitions. We do this in debug
         // mode only because this is a very expensive operation.
         #[cfg(debug_assertions)]
-        trace.validate(&air, &aux_trace_segments, &aux_trace_rand_elements);
+        trace.validate(air, &aux_trace_segments, &aux_trace_rand_elements);
+        Ok((trace_polys, trace_commitment, aux_trace_rand_elements))
+    }
 
+    fn evaluate_constraints<'a, E, H>(
+        &self,
+        air: &'a Self::Air,
+        domain: &'a StarkDomain<E::BaseField>,
+        channel: &mut ProverChannel<Self::Air, E, H>,
+        trace_lde: &TraceLde<E>,
+        aux_trace_rand_elements: AuxTraceRandElements<E>,
+    ) -> Result<ConstraintEvaluationTable<'a, E>, ProverError>
+    where
+        E: FieldElement<BaseField = Self::BaseField>,
+        H: ElementHasher<BaseField = Self::BaseField>,
+    {
         // 2 ----- evaluate constraints -----------------------------------------------------------
         // evaluate constraints specified by the AIR over the constraint evaluation domain, and
         // compute random linear combinations of these evaluations using coefficients drawn from
@@ -330,15 +370,31 @@ pub trait Prover {
         #[cfg(feature = "std")]
         let now = Instant::now();
         let constraint_coeffs = channel.get_constraint_composition_coeffs();
-        let evaluator = ConstraintEvaluator::new(&air, aux_trace_rand_elements, constraint_coeffs);
-        let constraint_evaluations = evaluator.evaluate(trace_commitment.trace_table(), &domain);
+        let evaluator: ConstraintEvaluator<_, E> =
+            ConstraintEvaluator::new(air, aux_trace_rand_elements, constraint_coeffs);
+        let constraint_evaluations = evaluator.evaluate(trace_lde, domain);
         #[cfg(feature = "std")]
         debug!(
             "Evaluated constraints over domain of 2^{} elements in {} ms",
             log2(constraint_evaluations.num_rows()),
             now.elapsed().as_millis()
         );
+        Ok(constraint_evaluations)
+    }
 
+    fn prove_after_constraint_eval<E, H>(
+        &self,
+        air: &Self::Air,
+        mut channel: ProverChannel<Self::Air, E, H>,
+        constraint_evaluations: ConstraintEvaluationTable<E>,
+        trace_polys: TracePolyTable<E>,
+        trace_commitment: TraceCommitment<E, H>,
+    ) -> Result<StarkProof, ProverError>
+    where
+        E: FieldElement<BaseField = Self::BaseField>,
+        H: ElementHasher<BaseField = Self::BaseField>,
+    {
+        let domain = StarkDomain::new(air);
         // 3 ----- commit to constraint evaluations -----------------------------------------------
 
         // first, build constraint composition polynomial from the constraint evaluation table:
@@ -391,7 +447,7 @@ pub trait Prover {
         // draw random coefficients to use during DEEP polynomial composition, and use them to
         // initialize the DEEP composition polynomial
         let deep_coefficients = channel.get_deep_composition_coeffs();
-        let mut deep_composition_poly = DeepCompositionPoly::new(&air, z, deep_coefficients);
+        let mut deep_composition_poly = DeepCompositionPoly::new(air, z, deep_coefficients);
 
         // combine all trace polynomials together and merge them into the DEEP composition
         // polynomial
@@ -522,11 +578,7 @@ pub trait Prover {
         let now = Instant::now();
         let trace_tree = trace_lde.commit_to_rows();
         #[cfg(feature = "wasm")]
-        {
-            let r: &H::Digest = trace_tree.root();
-            let h = hex::encode(r.to_bytes());
-            info!("trace tree is {}", h);
-        }
+        info!("trace tree is {:x}", trace_tree.root());
         #[cfg(feature = "std")]
         debug!(
             "Computed execution trace commitment (Merkle tree of depth {}) in {} ms",

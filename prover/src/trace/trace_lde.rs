@@ -11,10 +11,11 @@ use utils::collections::Vec;
 // TRACE LOW DEGREE EXTENSION
 // ================================================================================================
 /// TODO: add docs
+#[derive(Debug)]
 pub struct TraceLde<E: FieldElement> {
-    main_segment_lde: Matrix<E::BaseField>,
-    aux_segment_ldes: Vec<Matrix<E>>,
-    blowup: usize,
+    pub main_segment_lde: Matrix<E::BaseField>,
+    pub aux_segment_ldes: Vec<Matrix<E>>,
+    pub blowup: usize,
 }
 
 impl<E: FieldElement> TraceLde<E> {
