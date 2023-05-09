@@ -66,7 +66,7 @@ use composer::DeepComposer;
 mod errors;
 pub use errors::VerifierError;
 
-use log::debug;
+use log::info;
 
 // VERIFIER
 // ================================================================================================
@@ -96,6 +96,7 @@ where
     // received from the prover
     let mut public_coin_seed = proof.context.to_elements();
     public_coin_seed.append(&mut pub_inputs.to_elements());
+    info!("public_inputs: {:?}", pub_inputs.to_elements());
     
     // create AIR instance for the computation specified in the proof
     let air = AIR::new(proof.get_trace_info(), pub_inputs, proof.options().clone());
@@ -170,8 +171,6 @@ where
     let constraint_coeffs = air
         .get_constraint_composition_coefficients(&mut public_coin)
         .map_err(|_| VerifierError::RandomCoinError)?;
-
-    debug!("constraint_coeffs: {:?}", constraint_coeffs);
 
     // 2 ----- constraint commitment --------------------------------------------------------------
     // read the commitment to evaluations of the constraint composition polynomial over the LDE

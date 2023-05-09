@@ -4,7 +4,7 @@
 // LICENSE file in the root directory of this source tree.
 
 use air::{Air, AuxTraceRandElements, ConstraintCompositionCoefficients, EvaluationFrame};
-use log::debug;
+use log::info;
 use math::{polynom, FieldElement};
 use utils::collections::Vec;
 
@@ -40,10 +40,13 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
     let mut t_evaluations1 = E::zeroed_vector(t_constraints.num_main_constraints());
     air.evaluate_transition(main_trace_frame, &periodic_values, &mut t_evaluations1);
 
-    debug!(
-        "main_trace_frame: {:?}, t_evaluations1: {:?}, periodic_values: {:?}",
-        main_trace_frame, &t_evaluations1, &periodic_values
-    );
+    info!("composition_coefficients: {:?}", &composition_coefficients);
+    info!("main_trace_frame: {:?}", &main_trace_frame);
+    info!("aux_trace_frame: {:?}", &aux_trace_frame);
+    info!("aux_trace_rand_elements: {:?}", &aux_rand_elements);
+    info!("x: {:?}", &x);
+    info!("periodic_values: {:?}", &periodic_values);
+    info!("t_evaluations1: {:?}", &t_evaluations1);
 
     // evaluate transition constraints for auxiliary trace segments (if any)
     let mut t_evaluations2 = E::zeroed_vector(t_constraints.num_aux_constraints());
@@ -56,11 +59,13 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
             &mut t_evaluations2,
         );
     }
+    info!("t_evaluations2: {:?}", &t_evaluations2);
 
     // merge all constraint evaluations into a single value by computing their random linear
     // combination using coefficients drawn from the public coin. this also divides the result
     // by the divisor of transition constraints.
     let mut result = t_constraints.combine_evaluations::<E>(&t_evaluations1, &t_evaluations2, x);
+    info!("t_combined: {:?}", &result);
 
     // 2 ----- evaluate boundary constraints ------------------------------------------------------
 

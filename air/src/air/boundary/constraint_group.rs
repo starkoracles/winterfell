@@ -6,6 +6,7 @@
 use super::{
     Assertion, BTreeMap, BoundaryConstraint, ConstraintDivisor, ExtensionOf, FieldElement, Vec,
 };
+use log::info;
 
 // BOUNDARY CONSTRAINT GROUP
 // ================================================================================================
@@ -139,6 +140,14 @@ where
             let trace_value = state[constraint.column()];
             let evaluation = constraint.evaluate_at(x, trace_value);
             numerator += evaluation * (constraint.cc().0 + constraint.cc().1 * xp);
+            info!(
+                "b_column: {:?}, constraint: {:?}, trace_value: {:?}, x: {:?}, evaluation: {:?}",
+                constraint.column(),
+                &constraint,
+                &trace_value,
+                &x,
+                &evaluation,
+            );
         }
 
         let denominator = self.divisor.evaluate_at(x);

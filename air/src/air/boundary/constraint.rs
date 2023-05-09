@@ -4,6 +4,7 @@
 // LICENSE file in the root directory of this source tree.
 
 use super::{Assertion, BTreeMap, ExtensionOf, FieldElement, Vec};
+use log::info;
 use math::{fft, polynom};
 
 // BOUNDARY CONSTRAINT
