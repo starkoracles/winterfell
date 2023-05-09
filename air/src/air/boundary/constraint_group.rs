@@ -141,7 +141,7 @@ where
             let evaluation = constraint.evaluate_at(x, trace_value);
             numerator += evaluation * (constraint.cc().0 + constraint.cc().1 * xp);
             info!(
-                "b_column: {:?}, constraint: {:?}, trace_value: {:?}, x: {:?}, evaluation: {:?}",
+                "b_column: {:?}, trace_value: {:?}, x: {:?}, evaluation: {:?}",
                 constraint.column(),
                 &constraint,
                 &trace_value,
