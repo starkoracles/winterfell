@@ -136,6 +136,11 @@ where
             "inconsistent degree adjustment"
         );
         let mut numerator = E::ZERO;
+        info!(
+            "constraint_group, number_of_constraints: {:?}, denominator: {:?}",
+            self.constraints().len(),
+            self.divisor().evaluate_at(x)
+        );
         for constraint in self.constraints().iter() {
             let trace_value = state[constraint.column()];
             let evaluation = constraint.evaluate_at(x, trace_value);

@@ -40,12 +40,16 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
     let mut t_evaluations1 = E::zeroed_vector(t_constraints.num_main_constraints());
     air.evaluate_transition(main_trace_frame, &periodic_values, &mut t_evaluations1);
 
-    info!("composition_coefficients: {:?}", &composition_coefficients);
     info!("main_trace_frame: {:?}", &main_trace_frame);
     info!("aux_trace_frame: {:?}", &aux_trace_frame);
     info!("aux_trace_rand_elements: {:?}", &aux_rand_elements);
     info!("x: {:?}", &x);
     info!("periodic_values: {:?}", &periodic_values);
+    info!("trace_length: {:?}", &air.trace_length());
+    info!(
+        "trace_domain_generator: {:?}",
+        &air.trace_domain_generator()
+    );
     info!("t_evaluations1: {:?}", &t_evaluations1);
 
     // evaluate transition constraints for auxiliary trace segments (if any)
@@ -80,6 +84,10 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
     // iterate over boundary constraint groups for the main trace segment (each group has a
     // distinct divisor), evaluate constraints in each group and add their combination to the
     // result
+    info!(
+        "main_boundary_constraint_groups_number: {:?}",
+        &b_constraints.main_constraints().len()
+    );
     for group in b_constraints.main_constraints().iter() {
         // if adjustment degree hasn't changed, no need to recompute `xp` - so just reuse the
         // previous value; otherwise, compute new `xp`

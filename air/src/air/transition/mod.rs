@@ -10,6 +10,7 @@ pub use frame::EvaluationFrame;
 
 mod degree;
 pub use degree::TransitionConstraintDegree;
+use log::info;
 
 // CONSTANTS
 // ================================================================================================
@@ -63,6 +64,14 @@ impl<E: FieldElement> TransitionConstraints<E> {
             composition_coefficients.split_at(context.main_transition_constraint_degrees.len());
 
         let main_constraint_degrees = context.main_transition_constraint_degrees.clone();
+        info!(
+            "main_transition_constraints - target degree: {:?}",
+            context.composition_degree() + divisor.degree()
+        );
+        info!(
+            "main_constraint_coeffs: {:?}",
+            &main_constraint_coefficients
+        );
         let main_constraints = group_constraints(
             &main_constraint_degrees,
             context,
@@ -76,6 +85,22 @@ impl<E: FieldElement> TransitionConstraints<E> {
             aux_constraint_coefficients,
             divisor.degree(),
         );
+        info!(
+            "aux_constraints_number: {:?}",
+            context.aux_transition_constraint_degrees.len()
+        );
+        for (_, coeffs) in context
+            .aux_transition_constraint_degrees
+            .clone()
+            .iter()
+            .zip(aux_constraint_coefficients.iter())
+        {
+            info!(
+                "aux_transition_constraints - target degree: {:?}",
+                context.composition_degree() + divisor.degree()
+            );
+            info!("aux_constraint_coeffs: {:?}", &coeffs);
+        }
 
         Self {
             main_constraints,
