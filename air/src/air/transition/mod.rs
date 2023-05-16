@@ -210,6 +210,7 @@ impl<E: FieldElement> TransitionConstraints<E> {
 
         // divide out the evaluation of divisor at x and return the result
         let z = E::from(self.divisor.evaluate_at(x));
+        info!("z: {:?}", &z);
         result / z
     }
 }
