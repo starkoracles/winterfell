@@ -91,6 +91,11 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
         &b_constraints.main_constraints().len()
     );
     for group in b_constraints.main_constraints().iter() {
+        info!(
+            "b_constraint_group divisor_offset: {:?}, num_steps: {:?}",
+            &group.divisor().numerator()[0].1,
+            &group.divisor().numerator()[0].0
+        );
         // if adjustment degree hasn't changed, no need to recompute `xp` - so just reuse the
         // previous value; otherwise, compute new `xp`
         if group.degree_adjustment() != degree_adjustment {
