@@ -50,6 +50,8 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
         "trace_domain_generator: {:?}",
         &air.trace_domain_generator()
     );
+    info!("composition_coefficients: {:?}", &composition_coefficients);
+    info!("blowup_factor: {:?}", &air.ce_blowup_factor());
     info!("t_evaluations1: {:?}", &t_evaluations1);
 
     // evaluate transition constraints for auxiliary trace segments (if any)

@@ -5,6 +5,7 @@
 
 use crate::air::Assertion;
 use core::fmt::{Display, Formatter};
+use log::info;
 use math::{FieldElement, StarkField};
 use utils::collections::Vec;
 
@@ -93,10 +94,19 @@ impl<B: StarkField> ConstraintDivisor<B> {
     {
         let num_steps = assertion.get_num_steps(trace_length);
         if assertion.first_step == 0 {
+            info!(
+                "b_constraint divisor_offset: {:?}, num_steps: {:?}",
+                &B::ONE,
+                &num_steps
+            );
             Self::new(vec![(num_steps, B::ONE)], vec![])
         } else {
             let trace_offset = num_steps * assertion.first_step;
             let offset = get_trace_domain_value_at::<B>(trace_length, trace_offset);
+            info!(
+                "b_constraint divisor_offset: {:?}, num_steps: {:?}",
+                &offset, &num_steps
+            );
             Self::new(vec![(num_steps, offset)], vec![])
         }
     }
