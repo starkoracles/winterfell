@@ -70,8 +70,8 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
     // merge all constraint evaluations into a single value by computing their random linear
     // combination using coefficients drawn from the public coin. this also divides the result
     // by the divisor of transition constraints.
-    let mut result = t_constraints.combine_evaluations::<E>(&t_evaluations1, &t_evaluations2, x);
-    info!("t_combined: {:?}", &result);
+    let t_combined = t_constraints.combine_evaluations::<E>(&t_evaluations1, &t_evaluations2, x);
+    info!("t_combined: {:?}", &t_combined);
 
     // 2 ----- evaluate boundary constraints ------------------------------------------------------
 
@@ -90,6 +90,7 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
         "main_boundary_constraint_groups_number: {:?}",
         &b_constraints.main_constraints().len()
     );
+    let mut b_result = E::ZERO;
     for group in b_constraints.main_constraints().iter() {
         info!(
             "b_constraint_group divisor_offset: {:?}, num_steps: {:?}",
@@ -103,7 +104,7 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
             xp = x.exp_vartime(degree_adjustment.into());
         }
         // evaluate all constraints in the group, and add the evaluation to the result
-        result += group.evaluate_at(main_trace_frame.current(), x, xp);
+        b_result += group.evaluate_at(main_trace_frame.current(), x, xp);
     }
 
     // iterate over boundary constraint groups for auxiliary trace segments (each group has a
@@ -118,9 +119,11 @@ pub fn evaluate_constraints<A: Air, E: FieldElement<BaseField = A::BaseField>>(
                 xp = x.exp_vartime(degree_adjustment.into());
             }
             // evaluate all constraints in the group, and add the evaluation to the result
-            result += group.evaluate_at(aux_trace_frame.current(), x, xp);
+            b_result += group.evaluate_at(aux_trace_frame.current(), x, xp);
         }
     }
+    let result = b_result + t_combined;
+    info!("b_combined: {:?}, final_result: {:?}", &b_result, &result);
 
     result
 }
