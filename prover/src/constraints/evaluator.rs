@@ -28,8 +28,8 @@ const MIN_CONCURRENT_DOMAIN_SIZE: usize = 8192;
 
 pub struct ConstraintEvaluator<'a, A: Air, E: FieldElement<BaseField = A::BaseField>> {
     air: &'a A,
-    boundary_constraints: BoundaryConstraints<E>,
-    transition_constraints: TransitionConstraints<E>,
+    pub boundary_constraints: BoundaryConstraints<E>,
+    pub transition_constraints: TransitionConstraints<E>,
     aux_rand_elements: AuxTraceRandElements<E>,
     periodic_values: PeriodicValueTable<E::BaseField>,
 }
@@ -131,6 +131,24 @@ impl<'a, A: Air, E: FieldElement<BaseField = A::BaseField>> ConstraintEvaluator<
         evaluation_table
     }
 
+    pub fn evaluate_fragment(
+        &self,
+        trace: &TraceLde<E>,
+        domain: &'a StarkDomain<E::BaseField>,
+        fragment: &mut EvaluationTableFragment<E>,
+    ) -> () {
+        assert_eq!(
+            trace.trace_len(),
+            domain.lde_domain_size(),
+            "extended trace length is not consistent with evaluation domain"
+        );
+        if self.air.trace_info().is_multi_segment() {
+            self.evaluate_fragment_full(trace, domain, fragment);
+        } else {
+            self.evaluate_fragment_main(trace, domain, fragment);
+        };
+    }
+
     // EVALUATION HELPERS
     // --------------------------------------------------------------------------------------------
 
@@ -168,7 +186,7 @@ impl<'a, A: Air, E: FieldElement<BaseField = A::BaseField>> ConstraintEvaluator<
 
             // when in debug mode, save transition constraint evaluations
             #[cfg(debug_assertions)]
-            fragment.update_transition_evaluations(step, &t_evaluations, &[]);
+            fragment.update_transition_evaluations(i, &t_evaluations, &[]);
 
             // evaluate boundary constraints; the results go into remaining slots of the
             // evaluations buffer
@@ -228,7 +246,7 @@ impl<'a, A: Air, E: FieldElement<BaseField = A::BaseField>> ConstraintEvaluator<
 
             // when in debug mode, save transition constraint evaluations
             #[cfg(debug_assertions)]
-            fragment.update_transition_evaluations(step, &tm_evaluations, &ta_evaluations);
+            fragment.update_transition_evaluations(i, &tm_evaluations, &ta_evaluations);
 
             // evaluate boundary constraints; the results go into remaining slots of the
             // evaluations buffer

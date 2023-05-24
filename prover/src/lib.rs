@@ -84,9 +84,8 @@ mod matrix;
 pub use matrix::Matrix;
 
 mod constraints;
-use constraints::{
-    CompositionPoly, ConstraintCommitment, ConstraintEvaluationTable, ConstraintEvaluator,
-};
+use constraints::{CompositionPoly, ConstraintCommitment};
+pub use constraints::{ConstraintEvaluationTable, ConstraintEvaluator};
 
 mod composer;
 use composer::DeepCompositionPoly;
