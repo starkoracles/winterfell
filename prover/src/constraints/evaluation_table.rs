@@ -22,7 +22,7 @@ const MIN_FRAGMENT_SIZE: usize = 16;
 // ================================================================================================
 
 pub struct ConstraintEvaluationTable<'a, E: FieldElement> {
-    evaluations: Vec<Vec<E>>,
+    pub evaluations: Vec<Vec<E>>,
     divisors: Vec<ConstraintDivisor<E::BaseField>>,
     domain: &'a StarkDomain<E::BaseField>,
 
@@ -244,7 +244,7 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
 
 pub struct EvaluationTableFragment<'a, E: FieldElement> {
     offset: usize,
-    evaluations: Vec<&'a mut [E]>,
+    pub evaluations: Vec<&'a mut [E]>,
 
     #[cfg(debug_assertions)]
     tm_evaluations: Vec<&'a mut [E::BaseField]>,
