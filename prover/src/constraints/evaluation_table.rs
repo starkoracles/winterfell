@@ -25,13 +25,12 @@ pub struct ConstraintEvaluationTable<'a, E: FieldElement> {
     pub evaluations: Vec<Vec<E>>,
     divisors: Vec<ConstraintDivisor<E::BaseField>>,
     domain: &'a StarkDomain<E::BaseField>,
-
-    #[cfg(debug_assertions)]
-    main_transition_evaluations: Vec<Vec<E::BaseField>>,
-    #[cfg(debug_assertions)]
-    aux_transition_evaluations: Vec<Vec<E>>,
-    #[cfg(debug_assertions)]
-    expected_transition_degrees: Vec<usize>,
+    // #[cfg(debug_assertions)]
+    // main_transition_evaluations: Vec<Vec<E::BaseField>>,
+    // #[cfg(debug_assertions)]
+    // aux_transition_evaluations: Vec<Vec<E>>,
+    // #[cfg(debug_assertions)]
+    // expected_transition_degrees: Vec<usize>,
 }
 
 impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
@@ -64,21 +63,21 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
     ) -> Self {
         let num_columns = divisors.len();
         let num_rows = domain.ce_domain_size();
-        let num_tm_columns = transition_constraints.num_main_constraints();
-        let num_ta_columns = transition_constraints.num_aux_constraints();
+        // let num_tm_columns = transition_constraints.num_main_constraints();
+        // let num_ta_columns = transition_constraints.num_aux_constraints();
 
-        // collect expected degrees for all transition constraints to compare them against actual
-        // degrees; we do this in debug mode only because this comparison is expensive
-        let expected_transition_degrees =
-            build_transition_constraint_degrees(transition_constraints, domain.trace_length());
+        // // collect expected degrees for all transition constraints to compare them against actual
+        // // degrees; we do this in debug mode only because this comparison is expensive
+        // let expected_transition_degrees =
+        //     build_transition_constraint_degrees(transition_constraints, domain.trace_length());
 
         ConstraintEvaluationTable {
             evaluations: uninit_matrix(num_columns, num_rows),
             divisors,
             domain,
-            main_transition_evaluations: uninit_matrix(num_tm_columns, num_rows),
-            aux_transition_evaluations: uninit_matrix(num_ta_columns, num_rows),
-            expected_transition_degrees,
+            // main_transition_evaluations: uninit_matrix(num_tm_columns, num_rows),
+            // aux_transition_evaluations: uninit_matrix(num_ta_columns, num_rows),
+            // expected_transition_degrees,
         }
     }
 
@@ -99,6 +98,12 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
         self.evaluations.len()
     }
 
+    pub fn update_row(&mut self, row_idx: usize, row_data: &[E]) {
+        for (column, &value) in self.evaluations.iter_mut().zip(row_data) {
+            column[row_idx] = value;
+        }
+    }
+
     // TABLE FRAGMENTS
     // --------------------------------------------------------------------------------------------
 
@@ -116,31 +121,31 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
         // break evaluations into fragments
         let evaluation_data = make_fragments(&mut self.evaluations, num_fragments);
 
-        #[cfg(debug_assertions)]
-        let result = {
-            // in debug mode, also break individual transition evaluations into fragments
-            let tm_evaluation_data =
-                make_fragments(&mut self.main_transition_evaluations, num_fragments);
-            let ta_evaluation_data =
-                make_fragments(&mut self.aux_transition_evaluations, num_fragments);
+        // #[cfg(debug_assertions)]
+        // let result = {
+        //     // in debug mode, also break individual transition evaluations into fragments
+        //     let tm_evaluation_data =
+        //         make_fragments(&mut self.main_transition_evaluations, num_fragments);
+        //     let ta_evaluation_data =
+        //         make_fragments(&mut self.aux_transition_evaluations, num_fragments);
 
-            evaluation_data
-                .into_iter()
-                .zip(tm_evaluation_data)
-                .zip(ta_evaluation_data)
-                .enumerate()
-                .map(|(i, ((evaluations, tm_evaluations), ta_evaluations))| {
-                    EvaluationTableFragment {
-                        offset: i * fragment_size,
-                        evaluations,
-                        tm_evaluations,
-                        ta_evaluations,
-                    }
-                })
-                .collect()
-        };
+        //     evaluation_data
+        //         .into_iter()
+        //         .zip(tm_evaluation_data)
+        //         .zip(ta_evaluation_data)
+        //         .enumerate()
+        //         .map(|(i, ((evaluations, tm_evaluations), ta_evaluations))| {
+        //             EvaluationTableFragment {
+        //                 offset: i * fragment_size,
+        //                 evaluations,
+        //                 // tm_evaluations,
+        //                 // ta_evaluations,
+        //             }
+        //         })
+        //         .collect()
+        // };
 
-        #[cfg(not(debug_assertions))]
+        // #[cfg(not(debug_assertions))]
         let result = evaluation_data
             .into_iter()
             .enumerate()
@@ -168,8 +173,8 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
         for (column, divisor) in self.evaluations.into_iter().zip(self.divisors.iter()) {
             // in debug mode, make sure post-division degree of each column matches the expected
             // degree
-            #[cfg(debug_assertions)]
-            validate_column_degree(&column, divisor, self.domain, column.len() - 1)?;
+            // #[cfg(debug_assertions)]
+            // validate_column_degree(&column, divisor, self.domain, column.len() - 1)?;
 
             // divide the column by the divisor and accumulate the result into combined_poly
             acc_column(column, divisor, self.domain, &mut combined_poly);
@@ -187,56 +192,56 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
     // DEBUG HELPERS
     // --------------------------------------------------------------------------------------------
 
-    #[cfg(debug_assertions)]
-    pub fn validate_transition_degrees(&mut self) {
-        // evaluate transition constraint divisor (which is assumed to be the first one in the
-        // divisor list) over the constraint evaluation domain. this is used later to compute
-        // actual degrees of transition constraint evaluations.
-        let div_values = evaluate_divisor::<E::BaseField>(
-            &self.divisors[0],
-            self.num_rows(),
-            self.domain.offset(),
-        );
+    // #[cfg(debug_assertions)]
+    // pub fn validate_transition_degrees(&mut self) {
+    //     // evaluate transition constraint divisor (which is assumed to be the first one in the
+    //     // divisor list) over the constraint evaluation domain. this is used later to compute
+    //     // actual degrees of transition constraint evaluations.
+    //     let div_values = evaluate_divisor::<E::BaseField>(
+    //         &self.divisors[0],
+    //         self.num_rows(),
+    //         self.domain.offset(),
+    //     );
 
-        // collect actual degrees for all transition constraints by interpolating saved
-        // constraint evaluations into polynomials and checking their degree; also
-        // determine max transition constraint degree
-        let mut actual_degrees = Vec::with_capacity(self.expected_transition_degrees.len());
-        let mut max_degree = 0;
-        let inv_twiddles = fft::get_inv_twiddles::<E::BaseField>(self.num_rows());
+    //     // collect actual degrees for all transition constraints by interpolating saved
+    //     // constraint evaluations into polynomials and checking their degree; also
+    //     // determine max transition constraint degree
+    //     let mut actual_degrees = Vec::with_capacity(self.expected_transition_degrees.len());
+    //     let mut max_degree = 0;
+    //     let inv_twiddles = fft::get_inv_twiddles::<E::BaseField>(self.num_rows());
 
-        // first process transition constraint evaluations for the main trace segment
-        for evaluations in self.main_transition_evaluations.iter() {
-            let degree = get_transition_poly_degree(evaluations, &inv_twiddles, &div_values);
-            actual_degrees.push(degree);
-            max_degree = core::cmp::max(max_degree, degree);
-        }
+    //     // first process transition constraint evaluations for the main trace segment
+    //     for evaluations in self.main_transition_evaluations.iter() {
+    //         let degree = get_transition_poly_degree(evaluations, &inv_twiddles, &div_values);
+    //         actual_degrees.push(degree);
+    //         max_degree = core::cmp::max(max_degree, degree);
+    //     }
 
-        // then process transition constraint evaluations for auxiliary trace segments
-        for evaluations in self.aux_transition_evaluations.iter() {
-            let degree = get_transition_poly_degree(evaluations, &inv_twiddles, &div_values);
-            actual_degrees.push(degree);
-            max_degree = core::cmp::max(max_degree, degree);
-        }
+    //     // then process transition constraint evaluations for auxiliary trace segments
+    //     for evaluations in self.aux_transition_evaluations.iter() {
+    //         let degree = get_transition_poly_degree(evaluations, &inv_twiddles, &div_values);
+    //         actual_degrees.push(degree);
+    //         max_degree = core::cmp::max(max_degree, degree);
+    //     }
 
-        // make sure expected and actual degrees are equal
-        assert_eq!(
-            self.expected_transition_degrees, actual_degrees,
-            "transition constraint degrees didn't match\nexpected: {:>3?}\nactual:   {:>3?}",
-            self.expected_transition_degrees, actual_degrees
-        );
+    //     // make sure expected and actual degrees are equal
+    //     assert_eq!(
+    //         self.expected_transition_degrees, actual_degrees,
+    //         "transition constraint degrees didn't match\nexpected: {:>3?}\nactual:   {:>3?}",
+    //         self.expected_transition_degrees, actual_degrees
+    //     );
 
-        // make sure evaluation domain size does not exceed the size required by max degree
-        let expected_domain_size =
-            core::cmp::max(max_degree, self.domain.trace_length() + 1).next_power_of_two();
-        assert_eq!(
-            expected_domain_size,
-            self.num_rows(),
-            "incorrect constraint evaluation domain size; expected {}, but was {}",
-            expected_domain_size,
-            self.num_rows()
-        );
-    }
+    //     // make sure evaluation domain size does not exceed the size required by max degree
+    //     let expected_domain_size =
+    //         core::cmp::max(max_degree, self.domain.trace_length() + 1).next_power_of_two();
+    //     assert_eq!(
+    //         expected_domain_size,
+    //         self.num_rows(),
+    //         "incorrect constraint evaluation domain size; expected {}, but was {}",
+    //         expected_domain_size,
+    //         self.num_rows()
+    //     );
+    // }
 }
 
 // TABLE FRAGMENTS
@@ -245,11 +250,10 @@ impl<'a, E: FieldElement> ConstraintEvaluationTable<'a, E> {
 pub struct EvaluationTableFragment<'a, E: FieldElement> {
     offset: usize,
     pub evaluations: Vec<&'a mut [E]>,
-
-    #[cfg(debug_assertions)]
-    tm_evaluations: Vec<&'a mut [E::BaseField]>,
-    #[cfg(debug_assertions)]
-    ta_evaluations: Vec<&'a mut [E]>,
+    // #[cfg(debug_assertions)]
+    // tm_evaluations: Vec<&'a mut [E::BaseField]>,
+    // #[cfg(debug_assertions)]
+    // ta_evaluations: Vec<&'a mut [E]>,
 }
 
 impl<'a, E: FieldElement> EvaluationTableFragment<'a, E> {
@@ -275,21 +279,21 @@ impl<'a, E: FieldElement> EvaluationTableFragment<'a, E> {
         }
     }
 
-    /// Updates transition evaluations row with the provided data; available only in debug mode.
-    #[cfg(debug_assertions)]
-    pub fn update_transition_evaluations(
-        &mut self,
-        row_idx: usize,
-        main_evaluations: &[E::BaseField],
-        aux_evaluations: &[E],
-    ) {
-        for (column, &value) in self.tm_evaluations.iter_mut().zip(main_evaluations) {
-            column[row_idx] = value;
-        }
-        for (column, &value) in self.ta_evaluations.iter_mut().zip(aux_evaluations) {
-            column[row_idx] = value;
-        }
-    }
+    // / Updates transition evaluations row with the provided data; available only in debug mode.
+    // #[cfg(debug_assertions)]
+    // pub fn update_transition_evaluations(
+    //     &mut self,
+    //     row_idx: usize,
+    //     main_evaluations: &[E::BaseField],
+    //     aux_evaluations: &[E],
+    // ) {
+    //     for (column, &value) in self.tm_evaluations.iter_mut().zip(main_evaluations) {
+    //         column[row_idx] = value;
+    //     }
+    //     for (column, &value) in self.ta_evaluations.iter_mut().zip(aux_evaluations) {
+    //         column[row_idx] = value;
+    //     }
+    // }
 }
 
 // HELPER FUNCTIONS
